@@ -123,7 +123,7 @@ class Astar {
 private:
   /* ---------- main data structure ---------- */
   vector<NodePtr> path_node_pool_;
-  int use_node_num_, iter_num_;
+  int use_node_num_, iter_num_; // 
   NodeHashTable0 expanded_nodes_;
   std::priority_queue<NodePtr, std::vector<NodePtr>, NodeComparator0> open_set_;
   std::vector<NodePtr> path_nodes_;

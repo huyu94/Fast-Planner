@@ -106,7 +106,7 @@ class KinodynamicAstar {
   /* ---------- main data structure ---------- */
   vector<PathNodePtr> path_node_pool_;
   int use_node_num_, iter_num_;
-  NodeHashTable expanded_nodes_;
+  NodeHashTable expanded_nodes_; // 用于存储已经扩展过的节点
   std::priority_queue<PathNodePtr, std::vector<PathNodePtr>, NodeComparator>
       open_set_;
   std::vector<PathNodePtr> path_nodes_;
@@ -116,8 +116,8 @@ class KinodynamicAstar {
   Eigen::Matrix<double, 6, 6> phi_;  // state transit matrix
   // shared_ptr<SDFMap> sdf_map;
   EDTEnvironment::Ptr edt_environment_;
-  bool is_shot_succ_ = false;
-  Eigen::MatrixXd coef_shot_;
+  bool is_shot_succ_ = false; // 是否到达终点
+  Eigen::MatrixXd coef_shot_; // 
   double t_shot_;
   bool has_path_ = false;
 

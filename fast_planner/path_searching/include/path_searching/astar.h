@@ -141,7 +141,7 @@ private:
   /* map */
   double resolution_, inv_resolution_, time_resolution_, inv_time_resolution_;
   Eigen::Vector3d origin_, map_size_3d_;
-  double time_origin_;
+  double time_origin_; // 时间原点，每次在search函数中重置
 
   /* helper */
   Eigen::Vector3i posToIndex(Eigen::Vector3d pt);

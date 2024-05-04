@@ -58,7 +58,8 @@ int KinodynamicAstar::search(Eigen::Vector3d start_pt, Eigen::Vector3d start_v, 
   end_state.head(3) = end_pt;
   end_state.tail(3) = end_v;
   end_index = posToIndex(end_pt);
-  cur_node->f_score = lambda_heu_ * estimateHeuristic(cur_node->state, end_state, time_to_goal);
+  // 估计启发式，计算到达终点的最优时间，作为该点启发式函数的值
+  cur_node->f_score = lambda_heu_ * estimateHeuristic(cur_node->state, end_state, time_to_goal); 
   cur_node->node_state = IN_OPEN_SET;
   open_set_.push(cur_node);
   use_node_num_ += 1;
@@ -72,23 +73,26 @@ int KinodynamicAstar::search(Eigen::Vector3d start_pt, Eigen::Vector3d start_v, 
     // cout << "time start: " << time_start << endl;
   }
   else
+  {
     expanded_nodes_.insert(cur_node->index, cur_node);
+  }
 
   PathNodePtr neighbor = NULL;
   PathNodePtr terminate_node = NULL;
   bool init_search = init;
-  const int tolerance = ceil(1 / resolution_);
+  const int tolerance = ceil(1 / resolution_); // 到达终点的容忍度
 
   while (!open_set_.empty())
   {
     cur_node = open_set_.top();
 
-    // Terminate?
+    // Terminate? 终止判定
     bool reach_horizon = (cur_node->state.head(3) - start_pt).norm() >= horizon_;
     bool near_end = abs(cur_node->index(0) - end_index(0)) <= tolerance &&
                     abs(cur_node->index(1) - end_index(1)) <= tolerance &&
                     abs(cur_node->index(2) - end_index(2)) <= tolerance;
 
+    // 如果到达终点，或者到达视野边界，视野边界是一个圆
     if (reach_horizon || near_end)
     {
       terminate_node = cur_node;
@@ -146,6 +150,7 @@ int KinodynamicAstar::search(Eigen::Vector3d start_pt, Eigen::Vector3d start_v, 
     double pro_t;
     vector<Eigen::Vector3d> inputs;
     vector<double> durations;
+    // 设置输入
     if (init_search)
     {
       inputs.push_back(start_acc_);
@@ -332,7 +337,7 @@ void KinodynamicAstar::setParam(ros::NodeHandle& nh)
   nh.param("search/resolution_astar", resolution_, -1.0);
   nh.param("search/time_resolution", time_resolution_, -1.0);
   nh.param("search/lambda_heu", lambda_heu_, -1.0);
-  nh.param("search/allocate_num", allocate_num_, -1);
+  nh.param("search/allocate_num", allocate_num_, -1); // 预分配的节点空间： 100000
   nh.param("search/check_num", check_num_, -1);
   nh.param("search/optimistic", optimistic_, true);
   tie_breaker_ = 1.0 + 1.0 / 10000;
@@ -393,6 +398,7 @@ double KinodynamicAstar::estimateHeuristic(Eigen::VectorXd x1, Eigen::VectorXd x
   return 1.0 * (1 + tie_breaker_) * cost;
 }
 
+// 生成轨迹、
 bool KinodynamicAstar::computeShotTraj(Eigen::VectorXd state1, Eigen::VectorXd state2, double time_to_goal)
 {
   /* ---------- get coefficient ---------- */
@@ -436,13 +442,15 @@ bool KinodynamicAstar::computeShotTraj(Eigen::VectorXd state1, Eigen::VectorXd s
       vel(dim) = (Tm * poly1d).dot(t);
       acc(dim) = (Tm * Tm * poly1d).dot(t);
 
+      // 速度加速度可行性检查
       if (fabs(vel(dim)) > max_vel_ || fabs(acc(dim)) > max_acc_)
       {
         // cout << "vel:" << vel(dim) << ", acc:" << acc(dim) << endl;
         // return false;
       }
     }
-
+    
+    // 是否超出地图范围
     if (coord(0) < origin_(0) || coord(0) >= map_size_3d_(0) || coord(1) < origin_(1) || coord(1) >= map_size_3d_(1) ||
         coord(2) < origin_(2) || coord(2) >= map_size_3d_(2))
     {
@@ -452,17 +460,20 @@ bool KinodynamicAstar::computeShotTraj(Eigen::VectorXd state1, Eigen::VectorXd s
     // if (edt_environment_->evaluateCoarseEDT(coord, -1.0) <= margin_) {
     //   return false;
     // }
+    // 是否碰撞
     if (edt_environment_->sdf_map_->getInflateOccupancy(coord) == 1)
     {
       return false;
     }
   }
-  coef_shot_ = coef;
-  t_shot_ = t_d;
-  is_shot_succ_ = true;
+  coef_shot_ = coef; // 保存最终的轨迹系数
+  t_shot_ = t_d; // 保存最终的时间
+  is_shot_succ_ = true; // 记录是否到达终点
   return true;
 }
 
+
+// 一元三次方程求解
 vector<double> KinodynamicAstar::cubic(double a, double b, double c, double d)
 {
   vector<double> dts;
@@ -471,9 +482,9 @@ vector<double> KinodynamicAstar::cubic(double a, double b, double c, double d)
   double a1 = c / a;
   double a0 = d / a;
 
-  double Q = (3 * a1 - a2 * a2) / 9;
-  double R = (9 * a1 * a2 - 27 * a0 - 2 * a2 * a2 * a2) / 54;
-  double D = Q * Q * Q + R * R;
+  double Q = (3 * a1 - a2 * a2) / 9; // p/3
+  double R = (9 * a1 * a2 - 27 * a0 - 2 * a2 * a2 * a2) / 54; // -q/2
+  double D = Q * Q * Q + R * R; // Delta = (p/3)^3 + (q/2)^2
   if (D > 0)
   {
     double S = std::cbrt(R + sqrt(D));
@@ -498,6 +509,7 @@ vector<double> KinodynamicAstar::cubic(double a, double b, double c, double d)
   }
 }
 
+// 一元四次方程求解，依赖一元三次方程的求解           
 vector<double> KinodynamicAstar::quartic(double a, double b, double c, double d, double e)
 {
   vector<double> dts;

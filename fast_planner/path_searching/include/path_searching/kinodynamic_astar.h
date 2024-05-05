@@ -18,23 +18,25 @@ namespace fast_planner {
 // #define REACH_HORIZON 1
 // #define REACH_END 2
 // #define NO_PATH 3
-#define IN_CLOSE_SET 'a'
-#define IN_OPEN_SET 'b'
-#define NOT_EXPAND 'c'
-#define inf 1 >> 30
+#define IN_CLOSE_SET 'a' // 在close set中
+#define IN_OPEN_SET 'b' // 在open set中
+#define NOT_EXPAND 'c' // 没有被扩展
+#define inf 1 >> 30 
 
+
+// 一个路径节点的类
 class PathNode {
  public:
   /* -------------------- */
-  Eigen::Vector3i index;
-  Eigen::Matrix<double, 6, 1> state;
-  double g_score, f_score;
-  Eigen::Vector3d input;
-  double duration;
+  Eigen::Vector3i index; // 对应空间中的下标 
+  Eigen::Matrix<double, 6, 1> state; // 对应的状态
+  double g_score, f_score; // g_score 为从起点到当前节点的代价，f_score 为 g_score + h_score
+  Eigen::Vector3d input; // 父节点到该节点的输入
+  double duration; // 父节点到该节点的时间间隔
   double time;  // dyn
-  int time_idx;
-  PathNode* parent;
-  char node_state;
+  int time_idx; // 时间下标
+  PathNode* parent; // 父节点
+  char node_state; // 节点状态
 
   /* -------------------- */
   PathNode() {
@@ -46,6 +48,7 @@ class PathNode {
 };
 typedef PathNode* PathNodePtr;
 
+// 自定义的hash函数比较器
 class NodeComparator {
  public:
   bool operator()(PathNodePtr node1, PathNodePtr node2) {
@@ -53,6 +56,7 @@ class NodeComparator {
   }
 };
 
+// 自定义的hash函数
 template <typename T>
 struct matrix_hash : std::unary_function<T, size_t> {
   std::size_t operator()(T const& matrix) const {
@@ -66,6 +70,7 @@ struct matrix_hash : std::unary_function<T, size_t> {
   }
 };
 
+// 用来存储hashnode的表
 class NodeHashTable {
  private:
   /* data */
@@ -106,7 +111,7 @@ class KinodynamicAstar {
   /* ---------- main data structure ---------- */
   vector<PathNodePtr> path_node_pool_;
   int use_node_num_, iter_num_;
-  NodeHashTable expanded_nodes_;
+  NodeHashTable expanded_nodes_; // 用于存储已经扩展过的节点
   std::priority_queue<PathNodePtr, std::vector<PathNodePtr>, NodeComparator>
       open_set_;
   std::vector<PathNodePtr> path_nodes_;
@@ -116,8 +121,8 @@ class KinodynamicAstar {
   Eigen::Matrix<double, 6, 6> phi_;  // state transit matrix
   // shared_ptr<SDFMap> sdf_map;
   EDTEnvironment::Ptr edt_environment_;
-  bool is_shot_succ_ = false;
-  Eigen::MatrixXd coef_shot_;
+  bool is_shot_succ_ = false; // 是否到达终点
+  Eigen::MatrixXd coef_shot_; // 
   double t_shot_;
   bool has_path_ = false;
 

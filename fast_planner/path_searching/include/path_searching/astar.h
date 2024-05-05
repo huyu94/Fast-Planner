@@ -123,7 +123,7 @@ class Astar {
 private:
   /* ---------- main data structure ---------- */
   vector<NodePtr> path_node_pool_;
-  int use_node_num_, iter_num_;
+  int use_node_num_, iter_num_; // 
   NodeHashTable0 expanded_nodes_;
   std::priority_queue<NodePtr, std::vector<NodePtr>, NodeComparator0> open_set_;
   std::vector<NodePtr> path_nodes_;
@@ -141,7 +141,7 @@ private:
   /* map */
   double resolution_, inv_resolution_, time_resolution_, inv_time_resolution_;
   Eigen::Vector3d origin_, map_size_3d_;
-  double time_origin_;
+  double time_origin_; // 时间原点，每次在search函数中重置
 
   /* helper */
   Eigen::Vector3i posToIndex(Eigen::Vector3d pt);

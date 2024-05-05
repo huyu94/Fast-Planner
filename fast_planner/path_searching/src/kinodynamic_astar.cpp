@@ -135,7 +135,7 @@ int KinodynamicAstar::search(Eigen::Vector3d start_pt, Eigen::Vector3d start_v, 
       }
     }
     open_set_.pop();
-    cur_node->node_state = IN_CLOSE_SET;
+    cur_node->node_state = IN_CLOSE_SET; // 处理完当前节点,放入close set
     iter_num_ += 1;
 
     double res = 1 / 2.0, time_res = 1 / 1.0, time_res_init = 1 / 20.0;
@@ -146,6 +146,7 @@ int KinodynamicAstar::search(Eigen::Vector3d start_pt, Eigen::Vector3d start_v, 
     double pro_t;
     vector<Eigen::Vector3d> inputs;
     vector<double> durations;
+    // 生成控制输入和时间,进行搜索
     if (init_search)
     {
       inputs.push_back(start_acc_);
@@ -751,6 +752,7 @@ std::vector<PathNodePtr> KinodynamicAstar::getVisitedNodes()
   return visited;
 }
 
+// 相对于local map的位置
 Eigen::Vector3i KinodynamicAstar::posToIndex(Eigen::Vector3d pt)
 {
   Vector3i idx = ((pt - origin_) * inv_resolution_).array().floor().cast<int>();
@@ -767,6 +769,7 @@ int KinodynamicAstar::timeToIndex(double time)
   int idx = floor((time - time_origin_) * inv_time_resolution_);
 }
 
+// 输入state0,结合控制输入um和时间tau,计算state1
 void KinodynamicAstar::stateTransit(Eigen::Matrix<double, 6, 1>& state0, Eigen::Matrix<double, 6, 1>& state1,
                                     Eigen::Vector3d um, double tau)
 {
